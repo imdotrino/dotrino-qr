@@ -1,0 +1,49 @@
+{
+  "name": "@dotrino/qr",
+  "version": "0.1.0",
+  "description": "UI compartida de Dotrino para códigos QR: <dotrino-qr> (mostrar) y <dotrino-qr-scan> (leer con la cámara o desde una foto). Todo en el cliente, sin servicios de terceros: lo que se codifica puede ser del usuario. Shadow DOM, sin cookies, bilingüe es/en.",
+  "type": "module",
+  "main": "src/index.js",
+  "module": "src/index.js",
+  "exports": {
+    ".": {
+      "types": "./src/index.d.ts",
+      "import": "./src/index.js"
+    },
+    "./svg": {
+      "import": "./src/svg.js"
+    }
+  },
+  "files": [
+    "src",
+    "README.md",
+    "LICENSE"
+  ],
+  "sideEffects": [
+    "./src/index.js",
+    "./src/show.js",
+    "./src/scan.js"
+  ],
+  "dependencies": {
+    "jsqr": "1.4.0",
+    "qrcode-generator": "1.4.4"
+  },
+  "keywords": [
+    "dotrino",
+    "qr",
+    "scanner",
+    "web-component",
+    "camera"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/imdotrino/dotrino-qr.git"
+  },
+  "devDependencies": {
+    "typescript": "5.9.3"
+  },
+  "scripts": {
+    "type-check": "tsc --noEmit"
+  }
+}
