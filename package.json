@@ -44,6 +44,6 @@
     "typescript": "5.9.3"
   },
   "scripts": {
-    "type-check": "tsc --noEmit"
+    "test": "node --test test/*.test.mjs"
   }
 }
