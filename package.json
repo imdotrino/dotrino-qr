@@ -1,6 +1,6 @@
 {
   "name": "@dotrino/qr",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "UI compartida de Dotrino para códigos QR: <dotrino-qr> (mostrar) y <dotrino-qr-scan> (leer con la cámara o desde una foto). Todo en el cliente, sin servicios de terceros: lo que se codifica puede ser del usuario. Shadow DOM, sin cookies, bilingüe es/en.",
   "type": "module",
   "main": "src/index.js",
