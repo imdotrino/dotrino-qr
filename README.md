@@ -100,3 +100,7 @@ propia; migran a este paquete.
 ## Licencia
 
 MIT
+
+## Documentación de uso
+
+Está en el wiki: <https://wiki.dotrino.com/desarrollo/componentes/>
