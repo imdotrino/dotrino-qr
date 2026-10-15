@@ -11,4 +11,4 @@
  */
 export { qrSvg } from './svg.js'
 export { DotrinoQr } from './show.js'
-export { DotrinoQrScan, scanImageFile } from './scan.js'
+export { DotrinoQrScan, scanImageFile, scanFrame } from './scan.js'

@@ -12,3 +12,5 @@ export declare class DotrinoQrScan extends HTMLElement {
 }
 
 export declare function scanImageFile (file: Blob): Promise<string | null>
+/** Decodifica el QR del fotograma actual de un video, una imagen o un canvas. */
+export declare function scanFrame (source: HTMLVideoElement | HTMLImageElement | HTMLCanvasElement, canvas?: HTMLCanvasElement): string | null

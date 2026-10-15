@@ -80,6 +80,7 @@ en negro.
 ```js
 import { qrSvg } from '@dotrino/qr/svg'          // string SVG, sin tocar el DOM
 import { scanImageFile } from '@dotrino/qr'      // File|Blob → texto | null
+import { scanFrame } from '@dotrino/qr'          // <video>|<img>|<canvas> → texto | null (tu propia vista de cámara)
 ```
 
 ## Por qué existe

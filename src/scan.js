@@ -72,6 +72,25 @@ const CSS = `
   input[type=file] { display: none; }
 `
 
+/**
+ * Decodifica un QR del fotograma actual de un <video>, o de una imagen o un canvas.
+ * Devuelve el texto o null. Para quien monta su propia vista de cámara en vez del
+ * modal: se llama en cada requestAnimationFrame. Pasar siempre el mismo `canvas`
+ * evita crear uno por fotograma.
+ */
+export function scanFrame (source, canvas = document.createElement('canvas')) {
+  const w = source.videoWidth || source.naturalWidth || source.width
+  const h = source.videoHeight || source.naturalHeight || source.height
+  if (!w || !h) return null
+  try {
+    canvas.width = w; canvas.height = h
+    const ctx = canvas.getContext('2d', { willReadFrequently: true })
+    ctx.drawImage(source, 0, 0, w, h)
+    const d = ctx.getImageData(0, 0, w, h)
+    return jsQR(d.data, d.width, d.height)?.data || null
+  } catch (_) { return null }
+}
+
 /** Decodifica un QR de un archivo de imagen. Devuelve el texto o null. */
 export function scanImageFile (file) {
   return new Promise((resolve) => {
@@ -79,12 +98,7 @@ export function scanImageFile (file) {
     const url = URL.createObjectURL(file)
     img.onload = () => {
       try {
-        const c = document.createElement('canvas')
-        c.width = img.naturalWidth; c.height = img.naturalHeight
-        const ctx = c.getContext('2d')
-        ctx.drawImage(img, 0, 0)
-        const d = ctx.getImageData(0, 0, c.width, c.height)
-        resolve(jsQR(d.data, d.width, d.height)?.data || null)
+        resolve(scanFrame(img))
       } catch (_) { resolve(null) }
       URL.revokeObjectURL(url)
     }
@@ -181,17 +195,11 @@ export class DotrinoQrScan extends HTMLElement {
     const video = this.shadowRoot?.querySelector('video')
     if (!video || this.#stream) return
     const canvas = document.createElement('canvas')
-    const ctx = canvas.getContext('2d', { willReadFrequently: true })
     const tick = () => {
       if (!this.#stream) return
-      if (video.readyState >= 2 && video.videoWidth) {
-        canvas.width = video.videoWidth; canvas.height = video.videoHeight
-        try {
-          ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
-          const d = ctx.getImageData(0, 0, canvas.width, canvas.height)
-          const r = jsQR(d.data, d.width, d.height)
-          if (r?.data) return this.#hit(r.data)
-        } catch (_) {}
+      if (video.readyState >= 2) {
+        const text = scanFrame(video, canvas)
+        if (text) return this.#hit(text)
       }
       this.#raf = requestAnimationFrame(tick)
     }
