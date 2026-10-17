@@ -72,7 +72,7 @@ export class DotrinoQr extends HTMLElement {
       // Pasa cuando el texto no cabe ni en la versión 40. Es un fallo del llamador
       // y se dice, no se pinta medio QR.
       card.innerHTML = ''
-      console.error('[dotrino-qr] no se pudo generar el QR:', e?.message || e)
+      console.error('[dotrino-qr] could not render the QR:', e?.message || e)
     }
     cap.textContent = this.caption
     cap.hidden = !this.caption
