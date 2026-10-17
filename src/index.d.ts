@@ -1,4 +1,5 @@
 export declare function qrSvg (text: string, opts?: { ecc?: 'L' | 'M' | 'Q' | 'H', margin?: number }): string
+export declare function qrMatrix (text: string, opts?: { ecc?: 'L' | 'M' | 'Q' | 'H' }): boolean[][]
 
 export declare class DotrinoQr extends HTMLElement {
   value: string

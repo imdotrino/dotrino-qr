@@ -15,6 +15,30 @@ import qrcode from 'qrcode-generator'
 try { qrcode.stringToBytes = qrcode.stringToBytesFuncs['UTF-8'] } catch (_) {}
 
 /**
+ * La matriz de módulos, sin dibujar: `true` = oscuro. Para quien pinta el QR a su
+ * manera (un canvas a escala, un color elegido por el usuario en un generador).
+ * Un QR para leerlo con cámara dentro de una app va con `qrSvg` o `<dotrino-qr>`.
+ *
+ * @param {string} text
+ * @param {object} [opts]
+ * @param {'L'|'M'|'Q'|'H'} [opts.ecc='M']
+ * @returns {boolean[][]}
+ */
+export function qrMatrix (text, { ecc = 'M' } = {}) {
+  const qr = qrcode(0, ecc)
+  qr.addData(String(text ?? ''))
+  qr.make()
+  const n = qr.getModuleCount()
+  const m = []
+  for (let r = 0; r < n; r++) {
+    const row = []
+    for (let c = 0; c < n; c++) row.push(qr.isDark(r, c))
+    m.push(row)
+  }
+  return m
+}
+
+/**
  * @param {string} text        lo que se codifica
  * @param {object} [opts]
  * @param {'L'|'M'|'Q'|'H'} [opts.ecc='M']  corrección de errores
@@ -22,15 +46,13 @@ try { qrcode.stringToBytes = qrcode.stringToBytesFuncs['UTF-8'] } catch (_) {}
  * @returns {string} SVG listo para inyectar
  */
 export function qrSvg (text, { ecc = 'M', margin = 4 } = {}) {
-  const qr = qrcode(0, ecc)
-  qr.addData(String(text ?? ''))
-  qr.make()
-  const n = qr.getModuleCount()
+  const m = qrMatrix(text, { ecc })
+  const n = m.length
   const dim = n + margin * 2
   let rects = ''
   for (let r = 0; r < n; r++) {
     for (let c = 0; c < n; c++) {
-      if (qr.isDark(r, c)) rects += `<rect x="${c + margin}" y="${r + margin}" width="1" height="1"/>`
+      if (m[r][c]) rects += `<rect x="${c + margin}" y="${r + margin}" width="1" height="1"/>`
     }
   }
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${dim} ${dim}" ` +

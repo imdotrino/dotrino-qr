@@ -9,6 +9,6 @@
  * (un enlace con #fragment, un código de emparejamiento), así que no toca ninguna
  * API de imágenes ajena ni sube un fotograma a ninguna parte.
  */
-export { qrSvg } from './svg.js'
+export { qrSvg, qrMatrix } from './svg.js'
 export { DotrinoQr } from './show.js'
 export { DotrinoQrScan, scanImageFile, scanFrame } from './scan.js'

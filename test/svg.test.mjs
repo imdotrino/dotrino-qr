@@ -6,7 +6,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import jsQR from 'jsqr'
-import { qrSvg } from '../src/svg.js'
+import { qrSvg, qrMatrix } from '../src/svg.js'
 
 // Pasa el SVG a píxeles RGBA, `scale` píxeles por módulo.
 function rasterize (svg, scale = 4) {
@@ -50,4 +50,12 @@ test('negro sobre blanco y con zona de silencio', () => {
   assert.match(svg, /<g fill="#000">/)
   const xs = [...svg.matchAll(/<rect x="(\d+)" y="(\d+)" width="1"/g)].flatMap((m) => [Number(m[1]), Number(m[2])])
   assert.ok(Math.min(...xs) >= 4, 'ningún módulo invade el margen')
+})
+
+test('qrMatrix es la misma matriz que dibuja qrSvg', () => {
+  const m = qrMatrix('https://dotrino.com/#ñ', { ecc: 'Q' })
+  const svg = qrSvg('https://dotrino.com/#ñ', { ecc: 'Q', margin: 0 })
+  const dark = new Set([...svg.matchAll(/<rect x="(\d+)" y="(\d+)" width="1"/g)].map((r) => `${r[1]},${r[2]}`))
+  assert.equal(Number(/viewBox="0 0 (\d+)/.exec(svg)[1]), m.length)
+  for (let r = 0; r < m.length; r++) for (let c = 0; c < m.length; c++) assert.equal(m[r][c], dark.has(`${c},${r}`))
 })
