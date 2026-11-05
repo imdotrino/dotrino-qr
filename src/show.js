@@ -31,32 +31,46 @@ const CSS = `
   }
 `
 
+/** @typedef {'L'|'M'|'Q'|'H'} Ecc */
+/** @type {Ecc[]} */
+const ECC = ['L', 'M', 'Q', 'H']
+
+/**
+ * Enseña un QR. Atributos/propiedades: value, size, ecc, caption.
+ */
 export class DotrinoQr extends HTMLElement {
   static get observedAttributes () { return ['value', 'size', 'ecc', 'caption'] }
 
   constructor () {
     super()
-    this.attachShadow({ mode: 'open' })
-    this.shadowRoot.innerHTML = `<style>${CSS}</style><div class="card"></div><div class="caption" hidden></div>`
+    const root = this.attachShadow({ mode: 'open' })
+    root.innerHTML = `<style>${CSS}</style><div class="card"></div><div class="caption" hidden></div>`
   }
 
   connectedCallback () { this.#render() }
   attributeChangedCallback () { this.#render() }
 
+  /** @returns {string} */
   get value () { return this.getAttribute('value') || '' }
+  /** @param {string|null|undefined} v */
   set value (v) { if (v == null) this.removeAttribute('value'); else this.setAttribute('value', v) }
 
+  /** @returns {number} */
   get size () { return Number(this.getAttribute('size')) || 200 }
+  /** @param {number} v */
   set size (v) { this.setAttribute('size', String(v)) }
 
+  /** @returns {string} */
   get caption () { return this.getAttribute('caption') || '' }
+  /** @param {string|null|undefined} v */
   set caption (v) { if (v == null) this.removeAttribute('caption'); else this.setAttribute('caption', v) }
 
   #render () {
     const root = this.shadowRoot
     if (!root) return
-    const card = root.querySelector('.card')
-    const cap = root.querySelector('.caption')
+    // Both are written by the constructor.
+    const card = /** @type {HTMLElement} */ (root.querySelector('.card'))
+    const cap = /** @type {HTMLElement} */ (root.querySelector('.caption'))
     const value = this.value
     // Sin valor no se dibuja un QR vacío: un QR que no lleva a ninguna parte se
     // escanea igual y deja al usuario mirando un error que no es suyo.
@@ -65,14 +79,14 @@ export class DotrinoQr extends HTMLElement {
     const px = this.size
     card.style.width = px + 'px'
     card.style.height = px + 'px'
-    const ecc = (this.getAttribute('ecc') || 'M').toUpperCase()
+    const ecc = /** @type {Ecc} */ ((this.getAttribute('ecc') || 'M').toUpperCase())
     try {
-      card.innerHTML = qrSvg(value, { ecc: ['L', 'M', 'Q', 'H'].includes(ecc) ? ecc : 'M' })
+      card.innerHTML = qrSvg(value, { ecc: ECC.includes(ecc) ? ecc : 'M' })
     } catch (e) {
       // Pasa cuando el texto no cabe ni en la versión 40. Es un fallo del llamador
       // y se dice, no se pinta medio QR.
       card.innerHTML = ''
-      console.error('[dotrino-qr] could not render the QR:', e?.message || e)
+      console.error('[dotrino-qr] could not render the QR:', /** @type {{ message?: string } | null | undefined} */ (e)?.message || e)
     }
     cap.textContent = this.caption
     cap.hidden = !this.caption

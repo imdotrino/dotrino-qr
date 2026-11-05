@@ -17,6 +17,15 @@
  */
 import jsQR from 'jsqr'
 
+/**
+ * A shadow-root lookup for an element the template above always writes.
+ *
+ * @param {ParentNode} root
+ * @param {string} sel
+ * @returns {HTMLElement}
+ */
+const $ = (root, sel) => /** @type {HTMLElement} */ (root.querySelector(sel))
+
 const I18N = {
   es: {
     heading: 'Escanear un QR',
@@ -77,21 +86,33 @@ const CSS = `
  * Devuelve el texto o null. Para quien monta su propia vista de cámara en vez del
  * modal: se llama en cada requestAnimationFrame. Pasar siempre el mismo `canvas`
  * evita crear uno por fotograma.
+ *
+ * @param {HTMLVideoElement|HTMLImageElement|HTMLCanvasElement} source
+ * @param {HTMLCanvasElement} [canvas]
+ * @returns {string|null}
  */
 export function scanFrame (source, canvas = document.createElement('canvas')) {
-  const w = source.videoWidth || source.naturalWidth || source.width
-  const h = source.videoHeight || source.naturalHeight || source.height
+  // Whichever of the three sizes this kind of source has.
+  const s = /** @type {{ videoWidth?: number, naturalWidth?: number, width?: number, videoHeight?: number, naturalHeight?: number, height?: number }} */ (source)
+  const w = s.videoWidth || s.naturalWidth || s.width
+  const h = s.videoHeight || s.naturalHeight || s.height
   if (!w || !h) return null
   try {
     canvas.width = w; canvas.height = h
     const ctx = canvas.getContext('2d', { willReadFrequently: true })
+    if (!ctx) return null
     ctx.drawImage(source, 0, 0, w, h)
     const d = ctx.getImageData(0, 0, w, h)
     return jsQR(d.data, d.width, d.height)?.data || null
   } catch (_) { return null }
 }
 
-/** Decodifica un QR de un archivo de imagen. Devuelve el texto o null. */
+/**
+ * Decodifica un QR de un archivo de imagen. Devuelve el texto o null.
+ *
+ * @param {Blob} file
+ * @returns {Promise<string|null>}
+ */
 export function scanImageFile (file) {
   return new Promise((resolve) => {
     const img = new Image()
@@ -107,10 +128,15 @@ export function scanImageFile (file) {
   })
 }
 
+/**
+ * El modal de leer un QR. Propiedades: `open`, `lang`. Eventos: ver arriba.
+ */
 export class DotrinoQrScan extends HTMLElement {
   static get observedAttributes () { return ['open', 'lang'] }
 
+  /** @type {MediaStream|null} */
   #stream = null
+  /** @type {number|null} */
   #raf = null
 
   constructor () {
@@ -118,12 +144,17 @@ export class DotrinoQrScan extends HTMLElement {
     this.attachShadow({ mode: 'open' })
   }
 
+  /** @returns {boolean} */
   get open () { return this.hasAttribute('open') }
+  /** @param {boolean} v */
   set open (v) { if (v) this.setAttribute('open', ''); else this.removeAttribute('open') }
 
+  /** @returns {'es'|'en'} */
   get lang () { return this.getAttribute('lang') === 'en' ? 'en' : 'es' }
+  /** @param {string} v */
   set lang (v) { this.setAttribute('lang', v === 'en' ? 'en' : 'es') }
 
+  /** @param {string} name */
   attributeChangedCallback (name) {
     this.#render()
     if (name === 'open') { if (this.open) this.#start(); else this.#stop() }
@@ -134,14 +165,14 @@ export class DotrinoQrScan extends HTMLElement {
 
   #render () {
     const t = I18N[this.lang]
-    const root = this.shadowRoot
+    const root = /** @type {ShadowRoot} */ (this.shadowRoot)   // attached in the constructor
     if (!this.open) { root.innerHTML = ''; return }
     // Se reconstruye solo al abrir: mientras está cerrado no hay <video> vivo.
     if (root.querySelector('.overlay')) {
-      root.querySelector('h2').textContent = t.heading
-      root.querySelector('.hint').textContent = t.hint
-      root.querySelector('.file').textContent = t.photo
-      root.querySelector('.cancel').textContent = t.cancel
+      $(root, 'h2').textContent = t.heading
+      $(root, '.hint').textContent = t.hint
+      $(root, '.file').textContent = t.photo
+      $(root, '.cancel').textContent = t.cancel
       return
     }
     root.innerHTML = `
@@ -160,13 +191,14 @@ export class DotrinoQrScan extends HTMLElement {
           </div>
         </div>
       </div>`
-    root.querySelector('.cancel').addEventListener('click', () => {
+    $(root, '.cancel').addEventListener('click', () => {
       this.#stop()
       this.dispatchEvent(new CustomEvent('dotrino-qr-cancelled', { bubbles: true, composed: true }))
     })
-    root.querySelector('input[type=file]').addEventListener('change', async (ev) => {
-      const f = ev.target.files?.[0]
-      ev.target.value = ''
+    $(root, 'input[type=file]').addEventListener('change', async (ev) => {
+      const input = /** @type {HTMLInputElement} */ (ev.target)
+      const f = input.files?.[0]
+      input.value = ''
       if (!f) return
       const text = await scanImageFile(f)
       if (text) this.#hit(text)
@@ -174,18 +206,24 @@ export class DotrinoQrScan extends HTMLElement {
     })
   }
 
+  /** @param {string} msg */
   #error (msg) {
-    const el = this.shadowRoot?.querySelector('.err')
+    const el = /** @type {HTMLElement|null|undefined} */ (this.shadowRoot?.querySelector('.err'))
     if (!el) return
     el.textContent = msg || ''
     el.hidden = !msg
   }
 
+  /**
+   * @param {'camera'|'no-qr'} code
+   * @param {string} msg
+   */
   #fail (code, msg) {
     this.#error(msg)
     this.dispatchEvent(new CustomEvent('dotrino-qr-error', { detail: { code }, bubbles: true, composed: true }))
   }
 
+  /** @param {string} text */
   #hit (text) {
     this.#stop()
     this.dispatchEvent(new CustomEvent('dotrino-qr-scanned', { detail: { text }, bubbles: true, composed: true }))
@@ -212,7 +250,7 @@ export class DotrinoQrScan extends HTMLElement {
       this.#raf = requestAnimationFrame(tick)
     } catch (e) {
       this.#stream = null
-      console.warn('[dotrino-qr-scan] camera unavailable:', e?.name || e)
+      console.warn('[dotrino-qr-scan] camera unavailable:', /** @type {{ name?: string } | null | undefined} */ (e)?.name || e)
       this.#fail('camera', I18N[this.lang].camErr)
     }
   }
